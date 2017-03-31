@@ -1,12 +1,11 @@
 #include "two_step.hh"
-
+#include "base.hh"
 dtab_entry two_step::m_decisiontab[64][16];
-Stats::Scalar* two_step::m_transitions;
+//Stats::Scalar* two_step::m_transitions;
 
-two_step::two_step(Stats::Scalar *aScalarArray)
+two_step::two_step(Stats::Vector& trans):m_transitions(trans)
 {
-    //ctor
-    m_transitions = aScalarArray;
+
 
     gen_table();
 }
@@ -14,7 +13,7 @@ two_step::two_step(Stats::Scalar *aScalarArray)
 two_step::~two_step()
 {
     //dtor
-    m_transitions = NULL;
+    //m_transitions = NULL;
 }
 
 
@@ -54,8 +53,6 @@ void two_step::gen_table() {
     float energy_score, least_energy_score;
     dtab_entry chosen;
 
-    cout << "Two step table generation called " <<endl;
-
     for(i=0; i<64; i++) {
         for(j=0; j<16; j++) {
             /* For each incoming 4bit dissect in two and generate 3 bit possible patterns
@@ -92,8 +89,6 @@ void two_step::decode (uint32_t fromdata, uint16_t *p_todata) {
     uint8_t curr_three_bits = 0;
     uint8_t set_bits = 0;
 
-    //cout << "Two step decode called " <<endl;
-
     for(i=0; i<8; i++) { // Loop in 8*3 bits
         curr_three_bits = (fromdata >> ((7 - i) * 3)) & 7; //right shift and AND with 111 to get the three bits for this iter
         set_bits = 0;
@@ -109,27 +104,23 @@ void two_step::decode (uint32_t fromdata, uint16_t *p_todata) {
 
 void two_step::encode(uint16_t todata, uint32_t *p_fromdata){
     uint32_t i=0, j=0;
-    uint32_t result= (*p_fromdata) & 0xFF000000; //retain MSB
+    uint32_t result = (*p_fromdata) & 0xFF000000;; //retain MSB
     dtab_entry temp;
-
-    //cout << "Two step encode called " <<endl;
 
     for(i=0; i<4; i++) { //loop for 4 4-bit nibbles converting them using decision table
         temp = m_decisiontab[((*p_fromdata >> 6*i) & 0x3F)][((todata >> 4*i) & 0xF)];
         result |= (temp.code << 6*i);
-        for(j=0; j < MAX_TRANSITION; j++)
+        for(j = 0; j < MAX_TRANSITION; j++)
             m_transitions[j] += temp.transitions[j];
     }
     *p_fromdata = result;
 }
 
 void two_step::write_ts_encoded(uint8_t *fromblk, const uint8_t *toblk, uint32_t blksize) {
-   int32_t i=0, j=0;
-   uint32_t residual = 0;
+    int32_t i=0, j=0;
+    uint32_t residual = 0;
 
-    //cout << "Two step write  called " <<endl;
-
-    for(i=0, j=0; i< (blksize-2); i+=2, j+=3)
+    for(i=0, j=0; i < (blksize-2); i+=2, j+=3)
         encode(*((uint16_t*)(toblk+i)), (uint32_t*)(fromblk+j));
     residual |= ((*(fromblk+j+2) << 16) | (*(fromblk+j+1) << 8) | *(fromblk+j)); //last 3 bytes remain
     encode(*((uint16_t*)(toblk+i)), (uint32_t*)&residual);
@@ -138,8 +129,6 @@ void two_step::write_ts_encoded(uint8_t *fromblk, const uint8_t *toblk, uint32_t
 
 void two_step::read_ts_decoded(const uint8_t *fromblk, uint8_t *toblk, uint32_t blksize) {
     uint32_t i=0, j=0;
-
-    //cout << "Two step read  called " <<endl;
 
     for(i=0, j=0; i < (blksize + (blksize >>1)); i+=3, j+=2) //Size of fromdata is 3/2 times of target so adjust size and then keep 3 space for pointer in loop
         decode(*((uint32_t*)(fromblk+i)) & 0x00FFFFFF, (uint16_t*)(toblk+j));

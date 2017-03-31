@@ -98,17 +98,19 @@ class BaseTags : public ClockedObject
     /** Number of replacements of valid blocks per thread. */
     Stats::Vector replacements;
     /** average Number of flip bits of different Hamming distance HD*/
-    Stats::AverageVector avgZT;
-    Stats::AverageVector avgST;
-    Stats::AverageVector avgHT;
-    Stats::AverageVector avgTT;
+	Stats::Vector totalReps;
+		
+    Stats::Scalar totalRanks;
+       
+    Stats::Scalar totalInvalidFill;
+		
     /** total Number of flip bits of different Hamming distance HD*/
     Stats::Vector totalZT;
     Stats::Vector totalST;
     Stats::Vector totalHT;
     Stats::Vector totalTT;
-    Stats::Average avgRank;
-    Stats::AverageVector avgFlipbits;
+    
+    //Stats::AverageVector avgFlipbits;
     
     Stats::Vector totalFlipbits;
     /** total Number of 4 trans*/

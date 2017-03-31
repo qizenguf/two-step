@@ -58,6 +58,7 @@ def enable():
     stats_list = list(_m5.stats.statsList())
 
     for stat in stats_list:
+	print "stat %s %d \n" %(stat.name, stat.id)
         if not stat.check() or not stat.baseCheck():
             fatal("statistic '%s' (%d) was not properly initialized " \
                   "by a regStats() function\n", stat.name, stat.id)

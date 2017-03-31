@@ -119,28 +119,7 @@ BaseTags::regStats()
         occupancies.subname(i, cache->system->getMasterName(i));
     }
     //add by qi 
-    avgZT
-		.init(258)
-		.name(name() + ".avg_ZT")
-		.desc("average Number of ZTs of different Hamming distance HD");
-	avgST
-		.init(258)
-		.name(name() + ".avg_ST")
-		.desc("average Number of STs of different Hamming distance HD");
-	avgHT
-		.init(258)
-		.name(name() + ".avg_HT")
-		.desc("average Number of HTs of different Hamming distance HD");
-	avgTT
-		.init(258)
-		.name(name() + ".avg_TT")
-		.desc("average Number of TTs of different Hamming distance HD");
-		
-		
-	avgFlipbits
-		.init(9)
-		.name(name() + ".avg_fb")
-		.desc("average Number of fbs of different Hamming distance HD");	
+    
 		
 	totalFlipbits
 		.init(9)
@@ -150,28 +129,40 @@ BaseTags::regStats()
 		
 		
 	totalZT
-		.init(258)
+		.init(274)
 		.name(name() + ".total_ZT")
 		.desc("toal Number of ZT of different Hamming distance HD")
 		.flags(total | nonan);
+		
 	totalST
-		.init(258)
+		.init(274)
 		.name(name() + ".total_ST")
 		.desc("toal Number of ST of different Hamming distance HD")
 		.flags(total | nonan);
 	totalHT
-		.init(258)
+		.init(274)
 		.name(name() + ".total_HT")
 		.desc("toal Number of HT of different Hamming distance HD")
 		.flags(total | nonan);
 	totalTT
-		.init(258)
+		.init(274)
 		.name(name() + ".total_TT")
 		.desc("toal Number of TT of different Hamming distance HD")
 		.flags(total | nonan);
-	avgRank
-        .name(name() + ".avgRank")
-        .desc("avgRank of encoding selection")
+		
+	totalReps
+		.init(274)
+		.name(name() + ".total_Reps")
+		.flags(total | nonan)
+        .desc("Total number of replacement to valid blocks.");
+        
+    totalRanks
+        .name(name() + ".total_ranks")
+        .desc("Total number of rank to valid blocks.")
+        ;	
+    totalInvalidFill
+		.name(name() + ".total_invalid_fill")
+        .desc("Total number of fill in to invalid blocks.")
         ;		
 	lruTrans
 		.init(5)

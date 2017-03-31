@@ -582,7 +582,7 @@ CAR::findVictim(Addr addr, PacketPtr pkt)
 		//assert(!blk || blk->way < allocAssoc);
 				int fb = lineCompare(blk->data, pkt->getConstPtr<uint8_t>(), 64, shiftSize, flipSize);
 				totalFlipbits[cur_hd] += fb;
-				avgFlipbits[cur_hd] = fb;
+				//avgFlipbits[cur_hd] = fb;
 				DPRINTF(CacheRepl, "set %x: selecting blk %x for plru replacement with hd = %d %d\n", set, regenerateBlkAddr(blk->tag, set), cur_hd, fb);	
 			}
 			

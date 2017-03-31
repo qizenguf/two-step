@@ -196,7 +196,7 @@ int MLC::encodingCompare_2bit(const Byte* ablock, const Byte* bblock, int size, 
 	int minimal_diff = 2000000;
 	//for (int i =0; i<size; i += shiftSize) {
 		//Byte temp;
-	int numSeg = size/encodingSize;
+	int numSeg = (size/encodingSize) + 1;
 	double total_diff = 0;
 		int abits = 0, bbits = 0;
 	if(thres >= 0){	// count the #01 and 00	
@@ -605,7 +605,7 @@ MLC::findVictim(Addr addr, PacketPtr pkt)
     //std::vector<int> lru_trans;
    // std::vector<int> opt_trans;
     std::vector<int> fb(5,0);
-    int numSeg =  64 / encodingSize;
+    int numSeg =  (64 / encodingSize) + 1;
    // bool lru = true;
     //int rind = assoc - 1;
    /* for (int i = assoc - 1; i >= 0; i--) { // replace the second to LRU
@@ -802,7 +802,7 @@ MLC::findVictim(Addr addr, PacketPtr pkt)
 							level ++;
 							p = (p-1)/2;
 						}
-						if(temp == 3 )
+						if(temp == 3 ) // they are the rank of regions
 							plru[i] = 1;
 						else if(temp == 2) 
 							plru[i] = 2;
@@ -827,9 +827,9 @@ MLC::findVictim(Addr addr, PacketPtr pkt)
 						 }
 					  }
 					  else
-					  {                               // b0==1
+					  {
 						 if ( sets[set].m_tree[6] == 0)
-						 {
+						 {                               // b0==1
 							if ( sets[set].m_tree[7] == 0) retValue = 4;
 							else           retValue = 5;  // b5==1
 						 }
@@ -924,8 +924,7 @@ MLC::findVictim(Addr addr, PacketPtr pkt)
 							else           retValue = 31;  // b6==1
 						 }
 					  }
-					locVal[retValue] = (plru[6]);  
-					
+					locVal[retValue] = (plru[6]);  					
 				}
 				 int min_index = 0;
 				 int enc_d = 0;
@@ -935,43 +934,47 @@ MLC::findVictim(Addr addr, PacketPtr pkt)
 				 //double low_en = 0;
 				std::priority_queue<double, std::vector<double>, std::greater<double> > pq;
 				std::vector<int> curfb(5,0);
-			if(options == 2 ){
+			if(options == 2  or options == 3){
 				for(UInt32 i = 0 ; i < assoc; i++)
 				{	
-						int recency = locVal[i];
+					int recency = locVal[i];
+					if(recency != 0 or options == 3 ){
+						if(recency == 0) recency = 3;
 						//if( range == 0 && recency == 1) recency = 0;
 						//set->read_line(i, 0, read_buff, 64, false);
 						//std::memcpy(blk->data, pkt->getConstPtr<uint8_t>(), blkSize);
 						enc_d = encodingCompare_2bit(sets[set].blks[i]->data, pkt->getConstPtr<uint8_t>(), 64, shiftSize, flipSize, thres, encodingSize);
 						
 						
-							if(loc_weight >= 1024 )
+							if(loc_weight >= 1024 ) //old
 								curfb = lineCompare(blk->data, pkt->getConstPtr<uint8_t>(), 64, shiftSize, flipSize, sets[set].flipBits[idx]); // old line_compare
-							else if(loc_weight >= 512 ) // 2bit
+							else if(loc_weight >= 512 ) // 2bit remmaping
 								curfb = lineCompare_2bit_mapping(blk->data, pkt->getConstPtr<uint8_t>(), 64, shiftSize, flipSize, sets[set].flipBits[idx]);
 							else // flip MSB 1 bit
 								curfb = lineCompare_2bit(blk->data, pkt->getConstPtr<uint8_t>(), 64, shiftSize, flipSize, sets[set].flipBits[idx]);
-							//pq.push(1.084*fb[1]+ 1.084*fb[3] + 2.653*fb[2] + 2.653*fb[3]);
-						totalZT[enc_d] += curfb[0];
-						totalST[enc_d] += curfb[1];
-						totalHT[enc_d] += curfb[2];
-						totalTT[enc_d] += curfb[3];
-						avgZT[enc_d] = curfb[0];
-						avgST[enc_d] = curfb[1];
-						avgHT[enc_d] = curfb[2];
-						avgTT[enc_d] = curfb[3];
-						double cur = 10*(enc_d/numSeg) + diverse_weight*(enc_d%numSeg) + recency * (loc_weight % 512);
-						
-						if(enc_d < 7 )
-							cur = 0 + recency * (loc_weight % 512);
-						//int t = (8 * encodingSize) * hd  + recency * loc_weight;
-						//std::cout<< i <<" diff "<<t<<" bits "<<(uint8_t)read_buff[0]<<std::endl;
-						if(cur < lowestDiffBits || ( cur == lowestDiffBits && recency < cur_recency)) { 
-							fb = curfb;
-							lowestDiffBits = cur; 
-							min_index = i;
-							cur_hd = enc_d;
-							cur_recency = recency;
+								//pq.push(1.084*fb[1]+ 1.084*fb[3] + 2.653*fb[2] + 2.653*fb[3]);
+							totalZT[enc_d] += curfb[0];
+							totalST[enc_d] += curfb[1];
+							totalHT[enc_d] += curfb[2];
+							totalTT[enc_d] += curfb[3];
+							//avgZT[enc_d] = curfb[0];
+							//avgST[enc_d] = curfb[1];
+							//avgHT[enc_d] = curfb[2];
+							//avgTT[enc_d] = curfb[3];
+							totalReps[enc_d] += 1;
+							double cur = 10*(enc_d/numSeg) + diverse_weight*(enc_d%numSeg) + recency * (loc_weight % 512);
+							
+							//if(enc_d < 7 )
+							//	cur = 0 + recency * (loc_weight % 512);
+							//int t = (8 * encodingSize) * hd  + recency * loc_weight;
+							//std::cout<< i <<" diff "<<t<<" bits "<<(uint8_t)read_buff[0]<<std::endl;
+							if(cur < lowestDiffBits || ( cur == lowestDiffBits && recency < cur_recency)) { 
+								fb = curfb;
+								lowestDiffBits = cur; 
+								min_index = i;
+								cur_hd = enc_d;
+								cur_recency = recency;
+							}
 						}
 					}
 						idx = min_index;
@@ -984,10 +987,11 @@ MLC::findVictim(Addr addr, PacketPtr pkt)
 
 						assert(idx < assoc);
 						assert(idx >= 0);
-						assert(blk->way < allocAssoc);					
+						assert(blk->way < allocAssoc);	
+							
 				
 			}	
-			else if(options == 0 or options == 1 ){
+			else if(options == 0 or options == 1 ){ // options 1 for rank options 0 for normal
 				for(UInt32 i = 0 ; i < assoc; i++)
 				{	
 					int recency = locVal[i];
@@ -1029,7 +1033,7 @@ MLC::findVictim(Addr addr, PacketPtr pkt)
 						pq.pop();
 						rank++;
 					}
-				avgRank += rank;
+				totalRanks += rank;
 				idx = min_index;
 				blk = sets[set].blks[idx];
 				
@@ -1057,47 +1061,48 @@ MLC::findVictim(Addr addr, PacketPtr pkt)
 				totalST[cur_hd] += fb[1];
 				totalHT[cur_hd] += fb[2];
 				totalTT[cur_hd] += fb[3];
-				
+				totalReps[enc_d] += 1;
 				sets[set].flipBits[idx] = fb[4];
 				//totalZT[numSeg*numSeg + 1] += fb[0]; 
 				//totalST[numSeg*numSeg + 1] += fb[1];
 				//totalHT[numSeg*numSeg + 1] += fb[2];
 				//totalZT[numSeg*numSeg + 1] += fb[3];
 				
-				avgZT[cur_hd] = fb[0];
-				avgST[cur_hd] = fb[1];
-				avgHT[cur_hd] = fb[2];
-				avgTT[cur_hd] = fb[3];
+				//avgZT[cur_hd] = fb[0];
+				//avgST[cur_hd] = fb[1];
+				//avgHT[cur_hd] = fb[2];
+				//avgTT[cur_hd] = fb[3];
 				
-				avgZT[numSeg*numSeg + 1] = fb[0];
-				avgST[numSeg*numSeg + 1] = fb[1];
-				avgHT[numSeg*numSeg + 1] = fb[2];
-				avgTT[numSeg*numSeg + 1] = fb[3];
+				//avgZT[numSeg*numSeg + 1] = fb[0];
+				//avgST[numSeg*numSeg + 1] = fb[1];
+				//avgHT[numSeg*numSeg + 1] = fb[2];
+				//avgTT[numSeg*numSeg + 1] = fb[3];
 					//avgFlipbits[cur_hd] = fb;
 				DPRINTF(CacheRepl, "set %x: selecting blk %x for plru replacement with hd = %d %d %d %d \n", set, regenerateBlkAddr(blk->tag, set), cur_hd, fb[0], fb[1], fb[2], fb[3]);
 			}	
 		}else{
-			if(options == 0) {
-					if(loc_weight >= 1024 )
-						fb = lineCompare(blk->data, pkt->getConstPtr<uint8_t>(), 64, shiftSize, flipSize, sets[set].flipBits[idx]); // old line_compare
-					else if(loc_weight >= 512 ) // 2bit
-						fb = lineCompare_2bit_mapping(blk->data, pkt->getConstPtr<uint8_t>(), 64, shiftSize, flipSize, sets[set].flipBits[idx]);
-					else // flip MSB 1 bit
-						fb = lineCompare_2bit(blk->data, pkt->getConstPtr<uint8_t>(), 64, shiftSize, flipSize, sets[set].flipBits[idx]);
-			}
+			
+				if(loc_weight >= 1024 )
+					fb = lineCompare(blk->data, pkt->getConstPtr<uint8_t>(), 64, shiftSize, flipSize, sets[set].flipBits[idx]); // old line_compare
+				else if(loc_weight >= 512 ) // 2bit
+					fb = lineCompare_2bit_mapping(blk->data, pkt->getConstPtr<uint8_t>(), 64, shiftSize, flipSize, sets[set].flipBits[idx]);
+				else // flip MSB 1 bit
+					fb = lineCompare_2bit(blk->data, pkt->getConstPtr<uint8_t>(), 64, shiftSize, flipSize, sets[set].flipBits[idx]);
+			
 			sets[set].flipBits[idx] = fb[4];
-			totalZT[numSeg*numSeg - 1] += fb[0];
-			totalST[numSeg*numSeg - 1] += fb[1];
-			totalHT[numSeg*numSeg - 1] += fb[2];
-			totalTT[numSeg*numSeg - 1] += fb[3];
-			avgZT[numSeg*numSeg - 1] = fb[0];
-			avgST[numSeg*numSeg - 1] = fb[1];
-			avgHT[numSeg*numSeg - 1] = fb[2];
-			avgTT[numSeg*numSeg - 1] = fb[3];
-			avgZT[numSeg*numSeg + 1] = fb[0];
-			avgST[numSeg*numSeg + 1] = fb[1];
-			avgHT[numSeg*numSeg + 1] = fb[2];
-			avgTT[numSeg*numSeg + 1] = fb[3];
+			totalZT[271] += fb[0];
+			totalST[271] += fb[1];
+			totalHT[271] += fb[2];
+			totalTT[271] += fb[3];
+			totalInvalidFill += 1;
+			//avgZT[numSeg*numSeg - 1] = fb[0];
+			//avgST[numSeg*numSeg - 1] = fb[1];
+			//avgHT[numSeg*numSeg - 1] = fb[2];
+			//avgTT[numSeg*numSeg - 1] = fb[3];
+			//avgZT[numSeg*numSeg + 1] = fb[0];
+			//avgST[numSeg*numSeg + 1] = fb[1];
+			//avgHT[numSeg*numSeg + 1] = fb[2];
+			//avgTT[numSeg*numSeg + 1] = fb[3];
 			DPRINTF(CacheRepl, "set %x: selecting blk %x for plru replacement a invalid one with hd = %d %d %d %d \n", set, regenerateBlkAddr(blk->tag, set), 0, fb[0], fb[1], fb[2], fb[3]);	
 	}
 		//DPRINTF(CacheRepl, "set %x: selecting blk %x for plru replacement with \n", set, regenerateBlkAddr(blk->tag, set));

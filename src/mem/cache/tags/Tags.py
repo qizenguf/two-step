@@ -54,7 +54,6 @@ class BaseTags(ClockedObject):
                                "The hit latency for this cache")
     two_step_encoding = Param.Bool(False, "Two step encoding for MLC to increase endurance")
 
-
 class BaseSetAssoc(BaseTags):
     type = 'BaseSetAssoc'
     abstract = True
@@ -85,9 +84,9 @@ class MLC(BaseSetAssoc):
     flipSize = Param.Int(4, "flip size in bytes")
     encodingSize = Param.Int(4, "encoding size in bytes")
     loc_weight = Param.Int(0, "location weight")
-    diverse_weight = Param.Float(5.8, "diverse weight")
+    diverse_weight = Param.Float(13.5, "diverse weight")
     thres = Param.Int(12, "encoding threshold out of 64 ")
-    options = Param.Int(1, "options of scheme")
+    options = Param.Int(0, "options of scheme")
 
 class RandomRepl(BaseSetAssoc):
     type = 'RandomRepl'
